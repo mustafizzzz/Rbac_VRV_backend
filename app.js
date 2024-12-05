@@ -16,8 +16,8 @@ app.use(express.json())//to accept json data
 app.use(morgan('dev'))
 
 //routes here
-
-
-
+app.get('/test', (req, res) => {
+    res.send('GET request to the test endpoint best');
+});
 
 module.exports = app;
