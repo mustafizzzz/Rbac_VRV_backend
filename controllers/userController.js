@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const ApiResponse = require('../utils/ApiResponse');
 const sendVerificationEmail = require('../helpers/registerEmail');
 const User = require('../models/user');
+const ApiError = require('../utils/ApiError');
 
 
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -62,14 +63,13 @@ const registerUser = async (req, res) => {
 			}
 		} else {
 			// New user, create user and save details
-			const hashedPassword = await bcrypt.hash(password, 10);
 			const expiryDate = new Date();
 			expiryDate.setHours(expiryDate.getHours() + 1);
 
 			const newUser = await User.create({
 				username,
 				email,
-				password: hashedPassword,
+				password,
 				verifyCode,
 				verifyCodeExpiry: expiryDate,
 				isVerified: false,
@@ -111,32 +111,22 @@ const registerUser = async (req, res) => {
 
 
 const loginUser = async (req, res) => {
-	// req body -> data
-	// username or email
-	//find the user
-	//password check
-	//access and referesh token
-	//send cookie
+
 
 	const { email, password } = req.body
-	console.log(email);
 
 
-	// Here is an alternative of above code based on logic discussed in video:
-	if (!(password || email)) {
-		throw new ApiError(400, "username or email is required")
+	const user = await User.findOne({ email });
 
-	}
 
-	const user = await User.findOne({
-		$or: [{ email }]
-	})
 
 	if (!user) {
 		throw new ApiError(404, "User does not exist")
 	}
 
 	const isPasswordValid = await user.isPasswordCorrect(password)
+	console.log('isPasswordValid', isPasswordValid);
+
 
 	if (!isPasswordValid) {
 		throw new ApiError(401, "Invalid user credentials")
@@ -150,6 +140,8 @@ const loginUser = async (req, res) => {
 		httpOnly: true,
 		secure: true
 	}
+
+
 
 	return res
 		.status(200)

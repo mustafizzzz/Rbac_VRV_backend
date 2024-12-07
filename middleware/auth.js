@@ -2,6 +2,7 @@ const User = require("../models/user");
 
 
 const jwt = require("jsonwebtoken");
+const ApiError = require("../utils/ApiError");
 
 const verifyJWT = async (req, _, next) => {
     try {
@@ -9,7 +10,7 @@ const verifyJWT = async (req, _, next) => {
 
         // console.log(token);
         if (!token) {
-            throw new ApiError(401, "Unauthorized request")
+            throw new ApiError(401, "Unauthorized request");
         }
 
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
