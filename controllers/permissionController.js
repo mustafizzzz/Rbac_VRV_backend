@@ -22,12 +22,15 @@ const createPermission = async (req, res) => {
             });
         }
 
+        const createdBy = req.user._id;
+
         // Create a new permission
         const newPermission = new Permission({
             name,
             description,
             resource,
             action,
+            createdBy,
         });
 
         await newPermission.save();
@@ -57,6 +60,10 @@ const updatePermission = async (req, res) => {
             success: false,
             message: 'Resource and Action are required if updating the name',
         });
+    }
+
+    if (updateData.createdBy) {
+        delete updateData.createdBy;
     }
 
     try {
@@ -115,7 +122,15 @@ const deletePermission = async (req, res) => {
 // Get all permissions
 const getAllPermissions = async (req, res) => {
     try {
-        const permissions = await Permission.find();
+        const userId = req.user._id;
+        const permissions = await Permission.find({ createdBy: userId });
+
+        if (!permissions) {
+            return res.status(404).json({
+                success: false,
+                message: 'No permissions found',
+            });
+        }
 
         return res.status(200).json({
             success: true,

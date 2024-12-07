@@ -13,10 +13,21 @@ const RoleSchema = new mongoose.Schema({
     },
     permissions: [
         {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Permission',
+            permissionId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Permission',
+                required: true,
+            },
+            actions: {
+                type: [String],
+                required: true,
+            },
         },
     ],
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
     createdAt: {
         type: Date,
         default: Date.now,

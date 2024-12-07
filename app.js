@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const permissionRoutes = require('./routes/permissionRoute');
-
+const roleRoutes = require('./routes/roleRoutes');
 
 
 
@@ -22,5 +22,6 @@ app.use(morgan('dev'))
 //routes here
 app.use(`/api/v1/users`, userRoutes);
 app.use(`/api/v1/`, permissionRoutes);
+app.use(`/api/v1/roles`, roleRoutes);
 
 module.exports = app;
