@@ -2,7 +2,8 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const cors = require('cors');
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/userRoutes');
+const permissionRoutes = require('./routes/permissionRoute');
 
 
 
@@ -20,5 +21,6 @@ app.use(morgan('dev'))
 
 //routes here
 app.use(`/api/v1/users`, userRoutes);
+app.use(`/api/v1/`, permissionRoutes);
 
 module.exports = app;

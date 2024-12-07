@@ -17,7 +17,7 @@ const PermissionSchema = new mongoose.Schema({
         trim: true,
     },
     action: {
-        type: String,
+        type: [String],
         required: true,
     },
     createdAt: {
