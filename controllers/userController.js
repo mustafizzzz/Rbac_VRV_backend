@@ -19,7 +19,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 
 	} catch (error) {
-		throw new ApiError(500, "Something went wrong while generating referesh and access token")
+		res.status(500).json(new ApiResponse(500, {}, "Something went wrong while generating referesh and access token"))
 	}
 }
 
@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
 		console.log('username, email, password', username, email, password);
 
 		if ([email, username, password].some((field) => field?.trim() === "")) {
-			throw new ApiError(400, "All fields are required")
+			res.status(400).json(new ApiResponse(400, {}, "All fields are required"))
 		}
 
 		// Check if the user already exists and is verified
@@ -121,7 +121,7 @@ const loginUser = async (req, res) => {
 
 
 	if (!user) {
-		throw new ApiError(404, "User does not exist")
+		res.status(404).json(new ApiResponse(404, {}, "User not found"))
 	}
 
 	const isPasswordValid = await user.isPasswordCorrect(password)
@@ -129,19 +129,24 @@ const loginUser = async (req, res) => {
 
 
 	if (!isPasswordValid) {
-		throw new ApiError(401, "Invalid user credentials")
+		res.status(401).json(new ApiResponse(401, {}, "Invalid credentials"))
 	}
 
 	const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
 
 	const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
-	const options = {
+	if(loggedInUser.isVerified === false) {
+		return res.status(400).json({
+			success: false,
+			message: 'User not verified'
+		});
+	}
+
+const options = {
 		httpOnly: true,
 		secure: true
 	}
-
-
 
 	return res
 		.status(200)
@@ -189,7 +194,7 @@ const refreshAccessToken = async (req, res) => {
 	const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
 	if (!incomingRefreshToken) {
-		throw new ApiError(401, "unauthorized request")
+		res.status(401).json(new ApiResponse(401, {}, "Unauthorized request"))
 	}
 
 	try {
@@ -201,11 +206,14 @@ const refreshAccessToken = async (req, res) => {
 		const user = await User.findById(decodedToken?._id)
 
 		if (!user) {
-			throw new ApiError(401, "Invalid refresh token")
+
+			res.status(401).json(new ApiResponse(401, {}, "Invalid refresh token"))
 		}
 
 		if (incomingRefreshToken !== user?.refreshToken) {
-			throw new ApiError(401, "Refresh token is expired or used")
+			
+				res.status(401).json(new ApiResponse(401, {}, "Refresh token is expired or used")
+			)
 
 		}
 
@@ -228,11 +236,39 @@ const refreshAccessToken = async (req, res) => {
 				)
 			)
 	} catch (error) {
-		throw new ApiError(401, error?.message || "Invalid refresh token")
+		res.status(401).json(new ApiResponse(401, {}, "Invalid refresh token"))
 	}
 
 }
 
+const otpVerifyController=async(req,res)=>{
+	const {email,code}=req.body;
+
+	if(!email || !code){
+		res.status(400).json(new ApiResponse(400,{}, "Email and code are required"))
+	}
+
+	try {
+		const user=await User.findOne({email});
+		if(!user){
+			res.status(404).json(new ApiResponse(404,{}, "User not found"))
+		}
+	
+		const isCodeValid=user.verifyCode===code;
+		const isCodeExpired= new Date(user.verifyCodeExpiry) > new Date();
+	
+		if(isCodeExpired && isCodeValid){
+			user.isVerified=true;
+			await user.save({validateBeforeSave:false});
+	
+			return res.status(200).json(new ApiResponse(200,{}, "User verified successfully"))
+		}
+	} catch (error) {
+		res.status(500).json(new ApiResponse(500,{}, "unable to verify user something went wrong"))
+		
+	}
+}
 
 
-module.exports = { registerUser, loginUser, logoutUser, refreshAccessToken };
+
+module.exports = { registerUser, loginUser, logoutUser, refreshAccessToken, otpVerifyController };
