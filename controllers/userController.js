@@ -1,8 +1,8 @@
 
 const bcrypt = require('bcrypt');
-const { User } = require('../models/user');
 const ApiResponse = require('../utils/ApiResponse');
 const sendVerificationEmail = require('../helpers/registerEmail');
+const User = require('../models/user');
 
 
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -66,7 +66,7 @@ const registerUser = async (req, res) => {
 			const expiryDate = new Date();
 			expiryDate.setHours(expiryDate.getHours() + 1);
 
-			const newUser = new UserModel({
+			const newUser = await User.create({
 				username,
 				email,
 				password: hashedPassword,
@@ -74,26 +74,30 @@ const registerUser = async (req, res) => {
 				verifyCodeExpiry: expiryDate,
 				isVerified: false,
 			});
-			await newUser.save();
+
+
+
+			// Send verification email with OTP
+			const emailResponse = await sendVerificationEmail(email, username, verifyCode);
+			if (!emailResponse.success) {
+
+				return res.status(500).json({
+					success: false,
+					message: emailResponse.message
+				});
+			}
+
+			console.log("email:::", emailResponse);
+
+
+			const createdUser = await User.findById(newUser._id).select(
+				"-password -refreshToken"
+			)
+
+			return res.status(201).json(
+				new ApiResponse(200, createdUser, "User registered Successfully")
+			)
 		}
-
-		// Send verification email with OTP
-		const emailResponse = await sendVerificationEmail(email, username, verifyCode);
-		if (!emailResponse.success) {
-
-			return res.status(500).json({
-				success: false,
-				message: emailResponse.message
-			});
-		}
-
-		const createdUser = await User.findById(newUser._id).select(
-			"-password -refreshToken"
-		)
-
-		return res.status(201).json(
-			new ApiResponse(200, createdUser, "User registered Successfully")
-		)
 
 	} catch (error) {
 
