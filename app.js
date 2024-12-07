@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const cors = require('cors');
+const userRoutes = require('./routes/userRoutes')
+
+
 
 
 
@@ -16,8 +19,6 @@ app.use(express.json())//to accept json data
 app.use(morgan('dev'))
 
 //routes here
-app.get('/test', (req, res) => {
-    res.send('GET request to the test endpoint best');
-});
+app.use(`/api/v1/users`, userRoutes);
 
 module.exports = app;
